@@ -27,7 +27,7 @@ def send_message():
     if len(sender) > max_name_len or len(sender) < min_name_len:
         sender = 'ERROR, MIN/MAX LENGTH'
         text = f'Имя должно быть длиннее, чем {min_name_len} и короче, чем {max_name_len}!'
-    if len(text) > max_mess_len or len(text) < min_mess_len:
+    elif len(text) > max_mess_len or len(text) < min_mess_len:
         sender = 'ERROR, MIN/MAX LENGTH'
         text = f'Сообщение должно быть длиннее, чем {min_mess_len} и короче, чем {max_mess_len}!'
     add_message(sender, text)
