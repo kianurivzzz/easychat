@@ -1,0 +1,10 @@
+body {
+    background: #185abd;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+input {
+    background: #999999;
+}

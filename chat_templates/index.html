@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat by Shishka</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous">
+        </script>
+
+    <!-- Код взаимодействия с сервером -->
+    <script language="JavaScript">
+        // Загрузка и отображение сообщений
+        function loadMessages() {
+            $.get(
+                "/get_messages",
+                (data) => {
+                    $("#chat_window").empty();
+                    var messages = data["messages"];
+                    for (var i in messages) {
+                        var message = messages[i];
+                        var name = message["sender"];
+                        var text = message["text"];
+                        var time = message["time"];
+                        console.log(name, text, time);
+                        var html = "<div> [<b> " + name + " </b>]: " + text + " <i>" + time + "</i> </div>";
+                        var div = $(html); // div = визуальный элемент с сообщением
+
+                        $("#chat_window").append(div);
+                    }
+                }
+            );
+        }
+
+        // Отправка сообщения
+        function sendMessage() {
+            var name = $("#name").val(); // Кладем текст из поля "name" в переменную
+            var text = $("#text").val();
+            $.get("/send_message", { "name": name, "text": text });
+
+            $("#text").val("");
+        }
+
+        // При загрузке страницы
+        $(() => {
+            // При нажатии клавиш в поле текст
+            $("#text").on("keypress", (event) => {
+                // При нажатии Enter, вызвать функцию sendMessage
+                if (event.keyCode == 13) {
+                    sendMessage();
+                }
+            });
+
+            // Каждую секунду вызывать loadMessages
+            setInterval(loadMessages, 1000);
+        });
+
+    </script>
+</head>
+
+<body>
+    <b>Ваше Имя:</b>
+    <input id="name" type="text" placeholder="Напиши своё имя" />
+    <div id="chat_window"></div>
+    <br />
+    <input id="text" type="text" placeholder="Напиши сообщение">
+</body>
+
+</html>
