@@ -29,7 +29,7 @@
 
 ### Шаги по установке
 
-1. Клонируйте репозиторий:
+1. Клонируй репозиторий:
    ```bash
    git clone git@github.com:kianurivzzz/easychat.git
    cd easychat
