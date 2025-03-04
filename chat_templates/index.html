@@ -3,68 +3,277 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Chat by Shishka</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>EasyChat</title>
+    <link rel="stylesheet" href="/static/style.css?v=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous">
         </script>
 
     <!-- Код взаимодействия с сервером -->
-    <script language="JavaScript">
-        // Загрузка и отображение сообщений
-        function loadMessages() {
-            $.get(
-                "/get_messages",
-                (data) => {
-                    $("#chat_window").empty();
-                    var messages = data["messages"];
-                    for (var i in messages) {
-                        var message = messages[i];
-                        var name = message["sender"];
-                        var text = message["text"];
-                        var time = message["time"];
-                        console.log(name, text, time);
-                        var html = "<div> [<b> " + name + " </b>]: " + text + " <i>" + time + "</i> </div>";
-                        var div = $(html); // div = визуальный элемент с сообщением
+    <script>
+        // Глобальные переменные
+        let lastMessageCount = 0;
+        let updateTimer = null;
+        let isUpdating = false;
+        let debugMode = true; // Включить для отладки
 
-                        $("#chat_window").append(div);
-                    }
-                }
-            );
+        // Функция для логирования
+        function log(message) {
+            if (debugMode) {
+                console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
+            }
         }
 
-        // Отправка сообщения
-        function sendMessage() {
-            var name = $("#name").val(); // Кладем текст из поля "name" в переменную
-            var text = $("#text").val();
-            $.get("/send_message", { "name": name, "text": text });
-
-            $("#text").val("");
-        }
-
-        // При загрузке страницы
-        $(() => {
-            // При нажатии клавиш в поле текст
-            $("#text").on("keypress", (event) => {
-                // При нажатии Enter, вызвать функцию sendMessage
-                if (event.keyCode == 13) {
+        // Инициализация чата
+        $(document).ready(function() {
+            log("Страница загружена, инициализация...");
+            
+            // Загрузка имени из localStorage
+            if (localStorage.getItem("username")) {
+                $("#name").val(localStorage.getItem("username"));
+            }
+            
+            // Сохранение имени при изменении
+            $("#name").on("change", function() {
+                localStorage.setItem("username", $(this).val());
+            });
+            
+            // Обработка нажатия Enter в поле ввода
+            $("#text").on("keypress", function(event) {
+                if (event.keyCode === 13) {
                     sendMessage();
+                    return false;
                 }
             });
-
-            // Каждую секунду вызывать loadMessages
-            setInterval(loadMessages, 1000);
+            
+            // Обработка нажатия на кнопку отправки
+            $("#send-button").on("click", sendMessage);
+            
+            // Обработка видимости страницы
+            document.addEventListener("visibilitychange", function() {
+                if (document.hidden) {
+                    log("Страница скрыта, останавливаем таймер");
+                    stopUpdateTimer();
+                } else {
+                    log("Страница видима, запускаем таймер");
+                    startUpdateTimer();
+                    // Сразу проверяем новые сообщения
+                    checkNewMessages();
+                }
+            });
+            
+            // Первоначальная загрузка сообщений
+            loadMessages();
+            
+            // Запуск таймера обновления
+            startUpdateTimer();
+            
+            log("Инициализация завершена");
         });
-
+        
+        // Запуск таймера проверки новых сообщений
+        function startUpdateTimer() {
+            stopUpdateTimer(); // Сначала остановим существующий таймер
+            
+            log("Запускаем таймер проверки новых сообщений");
+            // Запускаем новый таймер, проверяем каждые 5 секунд
+            updateTimer = setInterval(function() {
+                checkNewMessages();
+            }, 5000);
+        }
+        
+        // Остановка таймера
+        function stopUpdateTimer() {
+            if (updateTimer) {
+                log("Останавливаем таймер");
+                clearInterval(updateTimer);
+                updateTimer = null;
+            }
+        }
+        
+        // Проверка наличия новых сообщений
+        function checkNewMessages() {
+            if (isUpdating) {
+                log("Уже выполняется обновление, пропускаем проверку");
+                return;
+            }
+            
+            log("Проверяем наличие новых сообщений");
+            $.ajax({
+                url: "/get_message_count",
+                method: "GET",
+                dataType: "json",
+                cache: false,
+                success: function(data) {
+                    log(`Текущее количество сообщений: ${data.count}, последнее известное: ${lastMessageCount}`);
+                    if (data.count !== lastMessageCount) {
+                        log("Обнаружены новые сообщения, загружаем");
+                        loadMessages();
+                    } else {
+                        log("Новых сообщений нет");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Ошибка при проверке новых сообщений:", error);
+                }
+            });
+        }
+        
+        // Загрузка сообщений
+        function loadMessages() {
+            if (isUpdating) {
+                log("Загрузка уже выполняется, пропускаем");
+                return;
+            }
+            
+            log("Начинаем загрузку сообщений");
+            isUpdating = true;
+            
+            // Показываем индикатор загрузки
+            $("#loading-indicator").show();
+            
+            $.ajax({
+                url: "/get_messages",
+                method: "GET",
+                dataType: "json",
+                cache: false,
+                success: function(data) {
+                    log(`Сообщения получены: ${data.messages.length}`);
+                    updateChatWindow(data.messages);
+                    lastMessageCount = data.messages.length;
+                    isUpdating = false;
+                    $("#loading-indicator").hide();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Ошибка при загрузке сообщений:", error);
+                    isUpdating = false;
+                    $("#loading-indicator").hide();
+                }
+            });
+        }
+        
+        // Обновление окна чата
+        function updateChatWindow(messages) {
+            log("Обновляем окно чата");
+            
+            // Сохраняем текущую позицию прокрутки
+            const chatMessages = document.getElementById("chat_messages");
+            const wasAtBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 10;
+            
+            // Очищаем и заполняем окно чата
+            $("#chat_messages").empty();
+            
+            if (messages.length === 0) {
+                $("#chat_messages").append('<div class="no-messages">Нет сообщений. Будьте первым!</div>');
+            } else {
+                for (let i = 0; i < messages.length; i++) {
+                    const message = messages[i];
+                    const name = message.sender;
+                    const text = message.text;
+                    const time = message.time;
+                    
+                    const messageClass = (name === $("#name").val()) ? "message-mine" : "message-other";
+                    
+                    const html = `
+                        <div class="message ${messageClass}">
+                            <div class="message-header">
+                                <span class="message-sender">${name}</span>
+                                <span class="message-time">${time}</span>
+                            </div>
+                            <div class="message-text">${text}</div>
+                        </div>
+                    `;
+                    
+                    $("#chat_messages").append(html);
+                }
+            }
+            
+            // Прокручиваем к последнему сообщению при необходимости
+            if (wasAtBottom || (messages.length > 0 && messages[messages.length-1].sender === $("#name").val())) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            log("Окно чата обновлено");
+        }
+        
+        // Отправка сообщения
+        function sendMessage() {
+            const name = $("#name").val();
+            const text = $("#text").val();
+            
+            if (name.trim() === "" || text.trim() === "") {
+                log("Пустое имя или сообщение, отмена отправки");
+                return;
+            }
+            
+            log(`Отправка сообщения от ${name}`);
+            
+            // Отключаем кнопку отправки
+            $("#send-button").prop("disabled", true);
+            
+            $.ajax({
+                url: "/send_message",
+                method: "GET",
+                data: {
+                    name: name,
+                    text: text
+                },
+                dataType: "json",
+                cache: false,
+                success: function(response) {
+                    log("Сообщение успешно отправлено");
+                    $("#text").val("");
+                    loadMessages(); // Загружаем сообщения после отправки
+                    $("#send-button").prop("disabled", false);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Ошибка при отправке сообщения:", error);
+                    $("#send-button").prop("disabled", false);
+                }
+            });
+        }
     </script>
 </head>
 
 <body>
-    <b>Ваше Имя:</b>
-    <input id="name" type="text" placeholder="Напиши своё имя" />
-    <div id="chat_window"></div>
-    <br />
-    <input id="text" type="text" placeholder="Напиши сообщение">
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>EasyChat</h1>
+        </div>
+        
+        <div class="chat-content">
+            <div class="chat-toolbar">
+                <div id="loading-indicator" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Загрузка...
+                </div>
+            </div>
+            
+            <div id="chat_messages" class="chat-messages"></div>
+            
+            <div class="chat-input-area">
+                <div class="user-info">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input id="name" type="text" placeholder="Ваше имя" />
+                    </div>
+                </div>
+                
+                <div class="message-input-container">
+                    <div class="input-group message-input">
+                        <input id="text" type="text" placeholder="Введите сообщение..." />
+                        <button id="send-button" type="button">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

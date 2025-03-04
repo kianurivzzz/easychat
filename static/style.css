@@ -1,10 +1,355 @@
-body {
-    background: #185abd;
-    display: flex;
-    align-items: center;
-    flex-direction: column;
+/* Основные стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-input {
-    background: #999999;
+:root {
+    --icloud-blue: #0070f3;
+    --icloud-blue-dark: #0055b3;
+    --icloud-bg: #fafafa;
+    --icloud-card: #ffffff;
+    --icloud-text: #333333;
+    --icloud-text-secondary: #8e8e93;
+    --icloud-border: #e6e6e6;
+    --icloud-green: #34c759;
+    --icloud-shadow: rgba(0, 0, 0, 0.06);
+    --icloud-radius: 10px;
+    --icloud-radius-sm: 8px;
+    --icloud-header-height: 44px;
+    --icloud-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+    background-color: var(--icloud-bg);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: var(--icloud-text);
+}
+
+/* Контейнер чата */
+.chat-container {
+    width: 100%;
+    max-width: 800px;
+    height: 90vh;
+    background-color: var(--icloud-card);
+    border-radius: var(--icloud-radius);
+    box-shadow: 0 2px 8px var(--icloud-shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--icloud-transition);
+}
+
+/* Заголовок чата */
+.chat-header {
+    background-color: var(--icloud-card);
+    height: var(--icloud-header-height);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--icloud-border);
+    position: relative;
+    z-index: 10;
+}
+
+.chat-header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--icloud-text);
+    letter-spacing: -0.01em;
+}
+
+/* Основной контент */
+.chat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - var(--icloud-header-height));
+    position: relative;
+}
+
+/* Панель инструментов */
+.chat-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: var(--icloud-card);
+    border-bottom: 1px solid var(--icloud-border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+#loading-indicator {
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--icloud-text-secondary);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    font-weight: 400;
+}
+
+#loading-indicator i {
+    margin-right: 6px;
+    color: var(--icloud-blue);
+}
+
+/* Область сообщений */
+.chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    background-color: var(--icloud-bg);
+    scroll-behavior: smooth;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    border: 2px solid var(--icloud-bg);
+}
+
+.no-messages {
+    text-align: center;
+    color: var(--icloud-text-secondary);
+    padding: 40px 20px;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+}
+
+/* Стили для сообщений */
+.message {
+    margin-bottom: 12px;
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: var(--icloud-radius-sm);
+    position: relative;
+    animation: messageAppear 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    line-height: 1.4;
+    font-size: 14px;
+}
+
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-mine {
+    background-color: var(--icloud-blue);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 3px;
+}
+
+.message-other {
+    background-color: #e9e9eb;
+    color: var(--icloud-text);
+    margin-right: auto;
+    border-bottom-left-radius: 3px;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+    font-size: 12px;
+}
+
+.message-sender {
+    font-weight: 500;
+    color: inherit;
+    opacity: 0.9;
+}
+
+.message-time {
+    color: inherit;
+    opacity: 0.7;
+}
+
+.message-text {
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.message-mine .message-text {
+    color: white;
+}
+
+/* Область ввода */
+.chat-input-area {
+    padding: 12px 16px;
+    background-color: var(--icloud-card);
+    border-top: 1px solid var(--icloud-border);
+    position: relative;
+    z-index: 10;
+}
+
+.user-info {
+    margin-bottom: 10px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background-color: var(--icloud-bg);
+    border-radius: 18px;
+    padding: 6px 12px;
+    transition: all var(--icloud-transition);
+    border: 1px solid var(--icloud-border);
+}
+
+.input-group:focus-within {
+    background-color: white;
+    box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.2);
+    border-color: var(--icloud-blue);
+}
+
+.input-group i {
+    color: var(--icloud-text-secondary);
+    font-size: 14px;
+}
+
+.input-group input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 6px 0;
+    font-size: 14px;
+    color: var(--icloud-text);
+}
+
+.input-group input::placeholder {
+    color: var(--icloud-text-secondary);
+    opacity: 0.8;
+}
+
+.message-input-container {
+    position: relative;
+}
+
+.message-input {
+    padding-right: 40px;
+}
+
+#send-button {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--icloud-blue);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all var(--icloud-transition);
+    font-size: 14px;
+}
+
+#send-button:hover {
+    background-color: var(--icloud-blue-dark);
+    transform: translateY(-50%) scale(1.05);
+}
+
+#send-button:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+#send-button:disabled {
+    background-color: var(--icloud-text-secondary);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+    .chat-container {
+        height: 100vh;
+        border-radius: 0;
+        max-width: 100%;
+    }
+
+    body {
+        padding: 0;
+    }
+
+    .message {
+        max-width: 85%;
+    }
+
+    .chat-header {
+        padding: 0 12px;
+    }
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --icloud-blue: #0a84ff;
+        --icloud-blue-dark: #0070e0;
+        --icloud-bg: #1a1a1a;
+        --icloud-card: #2c2c2e;
+        --icloud-text: #ffffff;
+        --icloud-text-secondary: #98989d;
+        --icloud-border: #3d3d3d;
+        --icloud-green: #30d158;
+        --icloud-shadow: rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+        background-color: #000000;
+    }
+
+    .chat-messages {
+        background-color: var(--icloud-bg);
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+        border: 2px solid var(--icloud-bg);
+    }
+
+    .message-other {
+        background-color: #3d3d3f;
+    }
+
+    .input-group {
+        background-color: #3d3d3f;
+    }
+
+    .input-group:focus-within {
+        background-color: #4d4d4f;
+        box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
+    }
 }
